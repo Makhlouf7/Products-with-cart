@@ -246,10 +246,11 @@ a {
 .delete-item {
   width: 18px;
   height: 18px;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   border: 1px solid grey;
   border-radius: 50%;
-  display: inline-block;
   align-self: center;
   cursor: pointer;
   &:hover {
