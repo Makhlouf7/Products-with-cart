@@ -27,11 +27,11 @@ Users should be able to:
 
 ### Screenshot
 
-[](./preview.jpg)
+[preview](./preview.jpg)
 
 ### Links
 
-- Live Site URL: [](https://makhlouf7.github.io/Products-with-cart/)
+- Live Site URL: [Website](https://makhlouf7.github.io/Products-with-cart/)
 
 ### Built with
 
