@@ -29,15 +29,7 @@ button {
 a {
   text-decoration: none;
 }
-/* Website Title Styles ////////////////////////////////////// */
-.attribution {
-  font-size: 11px;
-  text-align: center;
-  padding: 15px 0;
-}
-.attribution a {
-  color: hsl(228, 45%, 44%);
-}
+
 /* Store Page Styles ///////////////////////////////////////// */
 .store {
   background-color: #fcf8f5;

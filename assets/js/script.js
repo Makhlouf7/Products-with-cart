@@ -362,7 +362,6 @@ function addProducts(data) {
     cardP.className = "card-p";
     cardPrice.className = "card-price";
     // assinning attributes
-    console.log(window.innerWidth);
     if (window.innerWidth > 1200) {
       cardProductImage.src = data[i]["image"]["desktop"];
     } else if (window.innerWidth > 580) {
