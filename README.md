@@ -46,4 +46,5 @@ Users should be able to:
 - CSS Positions
 - CSS Grid
 - JavaScript
+- [Bootstrap](https://getbootstrap.com/) - CSS framework
 - [jQuery](https://jquery.com/) - JS library
