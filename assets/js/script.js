@@ -1,45 +1,68 @@
 "use strict";
-fetch("./data.json")
-  .then((response) => response.json())
-  .then((data) => {
-    launchStore(data);
-  })
-  .catch((error) => console.error("error fetching data:", error));
+const filteringContainer = document.querySelector(".filtering-container");
+const selectCategory = document.querySelector(".filter-category");
+const cartContainer = document.querySelector(".cart-items");
+
+(function () {
+  fetch("./data.json")
+    .then((response) => response.json())
+    .then((data) => {
+      launchStore(data);
+    })
+    .catch((error) => console.error("error fetching data:", error));
+})();
+
+let cartItemsArr = [],
+  lovedItems = [];
 
 function launchStore(data) {
   // add products from JSON to html file
   addProducts(data);
-  // makeing an array to include all btns we need to give it eventListner
+  initializeSelectCategory(data);
+  userSavedData(data);
+  // user is coming from the cart page
+  if (localStorage.getItem("checkout")) {
+    orderConfirmed(data);
+  }
+  // making an array to include all btns we need to give it eventListener
   let productBtns = document.querySelectorAll(
     ".card-image-add-to-cart, .card-product-decrease-btn, .card-product-increase-btn, .order-btn, .btn-new-order"
   );
-  // adding eventListner to needed btns
+  // adding eventListener to needed btns
   for (let i = 0; i < productBtns.length; i++) {
     productBtns[i].addEventListener("click", function () {
-      let index = this.getAttribute("data-index"),
-        itemQuantity = document.querySelector(
-          `.card-product-counter[data-index='${index}']`
-        );
-      if (this.className === "card-image-add-to-cart") {
-        itemQuantity.textContent = 1;
-        addTocart(data, index);
-      } else if (this.className === "card-product-decrease-btn") {
-        decreaseQuantityItem(data, index);
-      } else if (this.className === "card-product-increase-btn") {
-        increaseQuantityItem(data, index);
-      } else if (this.className === "order-btn") {
+      // let index = this.getAttribute("data-index");
+
+      if (this.className === "order-btn") {
+        if (!localStorage.getItem("signed")) window.location = "./sign.html";
         orderConfirmed(data);
       } else if (this.className === "btn-new-order") {
         startNewOrder(data);
       }
-      // keep tracking cart so we can update it if an item added, deleted, increased/decreased quantity
       trackingCart();
     });
   }
+
+  // Event Handlers
+  filteringContainer.addEventListener("input", function (e) {
+    if (e.target.nodeName == "SELECT") {
+      e.target.value == "All"
+        ? addProducts(data, {})
+        : addProducts(data, { category: e.target.value });
+
+      cartContainer.innerHTML = "";
+      userSavedData(data);
+    } else if (e.target.nodeName == "INPUT") {
+      addProducts(data, { text: e.target.value });
+
+      cartContainer.innerHTML = "";
+      userSavedData(data);
+    }
+  });
 }
-// start new order by removeing any eventLisners and reiniate items
+// start new order by removing any eventListener and reset items
 function startNewOrder(data) {
-  // definning needed elements
+  // defining needed elements
   let productsContainer = document.querySelector(".products-container"),
     orderConfirmedProductsContainer = document.querySelector(
       ".order-confirmed-products-container"
@@ -58,7 +81,7 @@ function startNewOrder(data) {
   productsContainer.innerHTML = "";
   orderConfirmedProductsContainer.innerHTML = "";
   cartItems.innerHTML = "";
-  // removing buttons and adding them back to reset event listner
+  // removing buttons and adding them back to reset eventListener
   orderConfirmedContainer.removeChild(document.querySelector(".btn-new-order"));
   orderItems.removeChild(document.querySelector(".order-btn"));
   btnNewOrder.className = "btn-new-order";
@@ -67,12 +90,24 @@ function startNewOrder(data) {
   orderBtn.textContent = "confirm order";
   orderConfirmedContainer.appendChild(btnNewOrder);
   orderItems.appendChild(orderBtn);
-  // after removing any eventListners and clearing items we launch the store
+  // after removing any eventListener and clearing items we launch the store
+  localStorage.removeItem("cartItems");
+  localStorage.removeItem("checkout");
   launchStore(data);
 }
 
+function initializeSelectCategory(data) {
+  // Add Select Items
+  for (let i = 0; i < data.length; i++) {
+    selectCategory.insertAdjacentHTML(
+      "beforeend",
+      `<option value="${data[i].category}">${data[i].category}</option>`
+    );
+  }
+}
+
 function orderConfirmed(data) {
-  // definning needed elementsd
+  // defining needed elements
   let cartItem = document.querySelectorAll(".cart-item"),
     orderConfirmedProductsContainer = document.querySelector(
       ".order-confirmed-products-container"
@@ -87,54 +122,26 @@ function orderConfirmed(data) {
   $(storeOrderConfirmed).fadeIn(500);
   // creating the item that will be added to the receipt
   for (let i = 0; i < cartItemIndex.length; i++) {
-    // definning needed elements
-    let orderConfirmedContainerItemsItem = document.createElement("div"),
-      orderConfirmedImage = document.createElement("div"),
-      orderProductImg = document.createElement("img"),
-      orderProductText = document.createElement("div"),
-      orderProductTitle = document.createElement("h3"),
-      orderProductP = document.createElement("p"),
-      quantityCounter = document.createElement("span"),
-      orderProductTotal = document.createElement("div"),
-      orderProductTotalPrice = document.createElement("span"),
-      index = cartItemIndex[i],
+    // defining needed variables
+    let index = cartItemIndex[i],
       itemQuantity = document.querySelector(
         `.cart-item .quantity-counter[data-index='${index}']`
       ),
       itemCounter = itemQuantity.getAttribute("data-count");
-    // assinning classes
-    orderConfirmedContainerItemsItem.className =
-      "order-confirmed-container-items-item";
-    orderConfirmedImage.className = "order-confirmed-image";
-    orderProductImg.className = "order-product-img";
-    orderProductText.className = "order-product-text";
-    orderProductTitle.className = "order-product-title";
-    orderProductP.className = "order-product-p";
-    quantityCounter.className = "quantity-counter";
-    orderProductTotal.className = "order-product-total";
-    orderProductTotalPrice.className = "order-product-total-price";
-    // assinning attributes
-    orderProductImg.src = data[index]["image"]["thumbnail"];
-    // assinning text content
-    orderProductTitle.textContent = data[index]["name"];
-    quantityCounter.textContent = `${itemCounter}x`;
-    orderProductTotalPrice.textContent = `$${(
-      data[index]["price"] * itemCounter
-    ).toFixed(2)}`;
-    // appending childs
-    orderConfirmedContainerItemsItem.appendChild(orderConfirmedImage);
-    orderConfirmedContainerItemsItem.appendChild(orderProductTotal);
-    orderConfirmedImage.appendChild(orderProductImg);
-    orderConfirmedImage.appendChild(orderProductText);
-    orderProductText.appendChild(orderProductTitle);
-    orderProductText.appendChild(orderProductP);
-    orderProductP.append(
-      quantityCounter,
-      `\u00A0\u00A0 @ $${data[index]["price"].toFixed(2)}\u00A0\u00A0`
-    );
-    orderProductTotal.appendChild(orderProductTotalPrice);
-    orderConfirmedProductsContainer.appendChild(
-      orderConfirmedContainerItemsItem
+    // adding item to container
+    orderConfirmedProductsContainer.insertAdjacentHTML(
+      "beforeend",
+      `<div class="order-confirmed-container-items-item"><div class="order-confirmed-image"><img class="order-product-img" src="${
+        data[index]["image"]["thumbnail"]
+      }"><div class="order-product-text"><h3 class="order-product-title">${
+        data[index]["name"]
+      }</h3><p class="order-product-p"><span class="quantity-counter">${itemCounter}x</span>&nbsp;&nbsp; @ $${data[
+        index
+      ]["price"].toFixed(
+        2
+      )}&nbsp;&nbsp;</p></div></div><div class="order-product-total"><span class="order-product-total-price">$${(
+        data[index]["price"] * itemCounter
+      ).toFixed(2)}</span></div></div>`
     );
   }
   // updating the receipt total price to equal the cart total price
@@ -143,7 +150,8 @@ function orderConfirmed(data) {
 }
 // track cart statue if item got added, deleted, updated, etc...
 function trackingCart() {
-  // definning needed elements
+  // defining needed elements
+  const bagCart = document.querySelector(".cart-icon-counter");
   let quantityCounterArr = document.querySelectorAll(
       ".cart-item .quantity-counter"
     ),
@@ -183,15 +191,17 @@ function trackingCart() {
     // show the active state of having items (order button, order total, text)
     orderItems.classList.remove("hidden");
   }
-  // assinning values
+  // assigning values
   orderTotal = orderTotal.toFixed(2);
   cartCounterElement.textContent = cartCounter;
+  bagCart.textContent = cartCounter;
   orderTotalElement.textContent = orderTotal;
 }
 
 // increase the quantity of product
 function increaseQuantityItem(data, index) {
-  // definning needed elements
+  const arrIndex = cartItemsArr.findIndex((item) => item.index === index);
+  // defining needed elements
   let quantityCounter = document.querySelector(
       `.quantity-counter[data-index='${index}']`
     ),
@@ -204,16 +214,21 @@ function increaseQuantityItem(data, index) {
     ),
     price = data[index]["price"];
   counter++;
-  // store the counter value in data-count attribute so we track it easily
+  // store the counter value in data-count attribute so we track it
   quantityCounter.setAttribute("data-count", counter);
   quantityCounter.textContent = `${counter}x`;
-  itemQuantity.textContent = counter;
   quantityTotalPrice.textContent = `$${(counter * price).toFixed(2)}`;
+  // handling edge case where item is not exist hence user used search
+  itemQuantity && (itemQuantity.textContent = counter);
+  // Update item counter in localstorage
+
+  cartItemsArr[arrIndex].counter = counter;
+  localStorage.setItem("cartItems", JSON.stringify(cartItemsArr));
 }
 
-// decrese the quantity of product and delete it from the cart if it reach zero
+// decrease the quantity of product and delete it from the cart if it reach zero
 function decreaseQuantityItem(data, index) {
-  // definning needed elements
+  // defining needed elements
   let quantityCounter = document.querySelector(
       `.quantity-counter[data-index='${index}']`
     ),
@@ -234,12 +249,16 @@ function decreaseQuantityItem(data, index) {
     quantityCounter.textContent = `${counter}x`;
     itemQuantity.textContent = counter;
     quantityTotalPrice.textContent = `$${(counter * price).toFixed(2)}`;
+    // Update item counter in localstorage
+    const arrIndex = cartItemsArr.findIndex((item) => item.index === index);
+    cartItemsArr[arrIndex].counter = counter;
+    localStorage.setItem("cartItems", JSON.stringify(cartItemsArr));
   }
 }
 
-// creating item, adding it to cart, giving it an eventListners to help deleteItem function
-function addTocart(data, index) {
-  // definning targeted elements
+// creating item, adding it to cart, giving it an eventListener to help deleteItem function
+function addToCart(data, index) {
+  // defining targeted elements
   let clickedAddToCartButton = document.querySelector(
       `.card-image-add-to-cart[data-index='${index}']`
     ),
@@ -249,62 +268,46 @@ function addTocart(data, index) {
     cardProductImage = document.querySelector(
       `.card-product-image[data-index='${index}']`
     );
-  cardProductImage.classList.add("change-image-border");
-  clickedAddToCartButton.classList.add("hidden");
-  productQuantityElement.classList.remove("hidden");
+  cardProductImage?.classList.add("change-image-border");
+  clickedAddToCartButton?.classList.add("hidden");
+  productQuantityElement?.classList.remove("hidden");
 
-  // definning needed elements
-  let itemPrice = data[index]["price"],
-    cartItem = document.createElement("div"),
-    cardText = document.createElement("div"),
-    deleteItem = document.createElement("div"),
-    cartItemTitle = document.createElement("h3"),
-    cartItemP = document.createElement("p"),
-    quantityCounter = document.createElement("span"),
-    quantityTotal = document.createElement("span"),
-    removeIcon = document.createElement("img");
-  // assinning classes
-  cartItem.className = "cart-item";
-  cardText.className = "card-text";
-  deleteItem.className = "delete-item";
-  cartItemTitle.className = "cart-item-title";
-  cartItemP.className = "cart-item-p";
-  quantityCounter.className = "quantity-counter";
-  quantityTotal.className = "quantity-total";
-  // assinning attributes
-  removeIcon.src = "./assets/images/icon-remove-item.svg";
-  cartItem.setAttribute("data-index", index);
-  deleteItem.setAttribute("data-index", index);
-  quantityTotal.setAttribute("data-index", index);
-  quantityCounter.setAttribute("data-count", "1");
-  quantityCounter.setAttribute("data-index", index);
-  // assinning text values
-  quantityCounter.textContent = "1x";
-  cartItemTitle.textContent = data[index]["name"];
-  quantityTotal.textContent = `$${itemPrice.toFixed(2)}`;
-  // appending childs
-  cartItem.appendChild(cardText);
-  cartItem.appendChild(deleteItem);
-  cardText.appendChild(cartItemTitle);
-  cardText.appendChild(cartItemP);
-  cartItemP.append(
-    quantityCounter,
-    `\u00A0\u00A0 @ $${itemPrice.toFixed(2)}\u00A0\u00A0`,
-    quantityTotal
+  // defining needed elements
+
+  let itemPrice = data[index]["price"];
+
+  cartContainer.insertAdjacentHTML(
+    "beforeend",
+    `<div class="cart-item" data-index="${index}"><div class="card-text"><h3 class="cart-item-title">${
+      data[index]["name"]
+    }</h3><p class="cart-item-p"><span class="quantity-counter" data-count="1" data-index="${index}">1x</span>&nbsp;&nbsp; @ $${itemPrice.toFixed(
+      2
+    )}&nbsp;&nbsp;<span class="quantity-total" data-index="${index}">$${itemPrice.toFixed(
+      2
+    )}</span></p></div><div class="delete-item" data-index="${index}"><img src="./assets/images/icon-remove-item.svg"></div></div>`
   );
-  deleteItem.appendChild(removeIcon);
-  // adding eventlistner to delete item icon in cart and tracking cart
-  deleteItem.addEventListener("click", function () {
-    deleteCartItem(this.getAttribute("data-index"));
-    trackingCart();
-  });
-
-  document.querySelector(".cart-items").appendChild(cartItem);
+  // adding eventListener to delete item icon in cart
+  document
+    .querySelector(`.delete-item[data-index="${index}"]`)
+    .addEventListener("click", function () {
+      // delete the item that have the clicked remove btn and call trackingCart to update cart
+      deleteCartItem(this.getAttribute("data-index"));
+      trackingCart();
+    });
+  const itemIndex = cartItemsArr.findIndex((item) => item.index === index);
+  if (itemIndex === -1) {
+    cartItemsArr.push({
+      index,
+      itemPrice,
+      counter: 1,
+    });
+    localStorage.setItem("cartItems", JSON.stringify(cartItemsArr));
+  }
 }
 
 // delete item from the cart
 function deleteCartItem(index) {
-  // definning needed elements
+  // defining needed elements
   let quantityCounter = document.querySelector(
       `.quantity-counter[data-index='${index}']`
     ),
@@ -326,82 +329,149 @@ function deleteCartItem(index) {
   productQuantityElement.classList.add("hidden");
   // reset the quantity counter of item
   quantityCounter.setAttribute("data-count", 1);
+
+  // remove item from the array then update array in the local storage
+  const arrIndex = cartItemsArr.findIndex((item) => item.index === index);
+  cartItemsArr.splice(arrIndex, 1);
+  localStorage.setItem("cartItems", JSON.stringify(cartItemsArr));
 }
 
 // adding products to the grid container
-function addProducts(data) {
+function addProducts(data, options = {}) {
   let productsContainer = document.querySelector(".products-container");
-  // add data to html products container
+  // Initialize container
+  productsContainer.innerHTML = "";
+  // add data to products container
   for (let i = 0; i < data.length; i++) {
-    // defining needed elements
-    let card = document.createElement("div"),
-      cardImage = document.createElement("div"),
-      cardProductImage = document.createElement("img"),
-      decreaseImage = document.createElement("img"),
-      increaseImage = document.createElement("img"),
-      addToCartImage = document.createElement("img"),
-      cardProductQuantity = document.createElement("div"),
-      cardProductDecreaseBtn = document.createElement("button"),
-      cardProductIncreaseBtn = document.createElement("button"),
-      cardImageAddToCart = document.createElement("button"),
-      cardProductCounter = document.createElement("p"),
-      addToCartP = document.createElement("p"),
-      cardTitle = document.createElement("h3"),
-      cardP = document.createElement("p"),
-      cardPrice = document.createElement("p");
-    // assigning class names
-    card.className = "card";
-    cardImage.className = "card-image";
-    cardProductImage.className = "card-product-image";
-    cardProductQuantity.className = "card-product-quantity hidden";
-    cardProductDecreaseBtn.className = "card-product-decrease-btn";
-    cardProductIncreaseBtn.className = "card-product-increase-btn";
-    cardProductCounter.className = "card-product-counter";
-    cardImageAddToCart.className = "card-image-add-to-cart";
-    cardTitle.className = "card-title";
-    cardP.className = "card-p";
-    cardPrice.className = "card-price";
-    // assinning attributes
-    if (window.innerWidth > 1200) {
-      cardProductImage.src = data[i]["image"]["desktop"];
-    } else if (window.innerWidth > 580) {
-      cardProductImage.src = data[i]["image"]["tablet"];
-    } else {
-      cardProductImage.src = data[i]["image"]["mobile"];
+    if (options.text) {
+      const typedText = options.text.toLowerCase();
+      const categoryText = data[i].category.toLowerCase();
+      const nameText = data[i].name.toLowerCase();
+      if (!categoryText.includes(typedText) && !nameText.includes(typedText))
+        continue;
+    } else if (options.category && data[i].category != options.category) {
+      continue;
     }
-    cardProductImage.setAttribute("data-index", `${i}`);
-    cardProductQuantity.setAttribute("data-index", `${i}`);
-    cardProductDecreaseBtn.setAttribute("data-index", `${i}`);
-    cardProductIncreaseBtn.setAttribute("data-index", `${i}`);
-    cardProductCounter.setAttribute("data-index", `${i}`);
-    cardImageAddToCart.setAttribute("data-index", `${i}`);
-    addToCartImage.src = "./assets/images/icon-add-to-cart.svg";
-    decreaseImage.src = "./assets/images/icon-decrement-quantity.svg";
-    increaseImage.src = "./assets/images/icon-increment-quantity.svg";
-    // assinning text content
-    addToCartP.textContent = "Add to Cart";
-    cardTitle.textContent = data[i]["category"];
-    cardP.textContent = data[i]["name"];
-    cardPrice.textContent = `$${data[i]["price"].toFixed(2)}`;
-    // appending childs
 
-    card.appendChild(cardImage);
-    cardImage.appendChild(cardProductImage);
-    cardImage.appendChild(cardProductQuantity);
-    cardProductQuantity.appendChild(cardProductDecreaseBtn);
-    cardProductDecreaseBtn.appendChild(decreaseImage);
-    cardProductQuantity.appendChild(cardProductCounter);
-    cardProductQuantity.appendChild(cardProductIncreaseBtn);
-    cardProductIncreaseBtn.appendChild(increaseImage);
-    // /cardProductQuantity
-    cardImage.appendChild(cardImageAddToCart);
-    cardImageAddToCart.appendChild(addToCartImage);
-    cardImageAddToCart.appendChild(addToCartP);
-    // /cardImage
-    card.appendChild(cardTitle);
-    card.appendChild(cardP);
-    card.appendChild(cardPrice);
-    // /card
-    productsContainer.appendChild(card);
+    let imageSrc;
+    if (window.innerWidth > 1200) {
+      imageSrc = data[i]["image"]["desktop"];
+    } else if (window.innerWidth > 580) {
+      imageSrc = data[i]["image"]["tablet"];
+    } else {
+      imageSrc = data[i]["image"]["mobile"];
+    }
+
+    productsContainer.insertAdjacentHTML(
+      "beforeend",
+      `<div class="card" data-index="${i}"><div class="loved-container" data-index="${i}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#808080" class="bi bi-suit-heart-fill" viewBox="0 0 16 16">
+                  <path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1"></path>
+                </svg>
+              </div><div class="card-image"><img class="card-product-image" src="${imageSrc}" data-index="${i}"><div class="card-product-quantity hidden" data-index="${i}"><button class="card-product-decrease-btn" data-index="${i}"><img src="./assets/images/icon-decrement-quantity.svg"></button><p class="card-product-counter" data-index="${i}"></p><button class="card-product-increase-btn" data-index="${i}"><img src="./assets/images/icon-increment-quantity.svg"></button></div><button class="card-image-add-to-cart" data-index="${i}"><img src="./assets/images/icon-add-to-cart.svg"><p>Add to Cart</p></button></div><h3 class="card-title">${
+        data[i]["category"]
+      }</h3><p class="card-p">${
+        data[i]["name"]
+      }</p><p class="card-price">$${data[i]["price"].toFixed(2)}</p></div>
+    `
+    );
+    // Event Handlers
+    document
+      .querySelector(`.loved-container[data-index="${i}"]`)
+      .addEventListener("click", function () {
+        if (!localStorage.getItem("signed")) {
+          window.location = "./sign.html";
+          return;
+        }
+        const icon = this.querySelector("svg");
+        if (icon.style.fill == "red") {
+          icon.style.fill = "#808080";
+          const lovedIndex = lovedItems.findIndex(
+            (i) => i == this.dataset.index
+          );
+          lovedItems.splice(lovedIndex, 1);
+          localStorage.setItem("lovedItems", JSON.stringify(lovedItems));
+        } else {
+          icon.style.fill = "red";
+          lovedItems.push(this.dataset.index);
+          localStorage.setItem("lovedItems", JSON.stringify(lovedItems));
+        }
+      });
   }
+
+  // adding eventListener to needed btns
+  const cards = document.querySelectorAll(".card");
+  cards.forEach((card) =>
+    card.addEventListener("click", function (e) {
+      const index = this.closest(".card").dataset.index,
+        itemQuantity = document.querySelector(
+          `.card-product-counter[data-index='${index}']`
+        );
+      const addCart = e.target.closest(".card-image-add-to-cart");
+      const increaseItem = e.target.closest(".card-product-increase-btn");
+      const decreaseItem = e.target.closest(".card-product-decrease-btn");
+      if (addCart?.className === "card-image-add-to-cart") {
+        itemQuantity.textContent = 1;
+        addToCart(data, index);
+      } else if (decreaseItem?.className === "card-product-decrease-btn") {
+        decreaseQuantityItem(data, index);
+      } else if (increaseItem?.className === "card-product-increase-btn") {
+        increaseQuantityItem(data, index);
+      }
+      // keep tracking cart so we can update it if an item added, deleted, increased/decreased quantity
+      trackingCart();
+    })
+  );
+}
+
+// adding items from local storage to cart
+function userSavedData(data) {
+  const signContainer = document.querySelector("#sign-container");
+  const icon = signContainer.querySelector("img");
+  const text = signContainer.querySelector("span");
+  if (localStorage.getItem("signed")) {
+    icon.setAttribute("src", "./assets/images/logout.svg");
+    text.textContent = "Logout";
+  } else {
+    icon.setAttribute("src", "./assets/images/login.svg");
+    text.textContent = "Sign in";
+  }
+  signContainer.addEventListener("click", function () {
+    if (localStorage.getItem("signed")) {
+      localStorage.clear();
+      location.reload();
+    } else {
+      window.location = "./sign.html";
+    }
+  });
+  // fill cart with the previous user data of cart
+  const fillCart = function () {
+    if (!localStorage.getItem("cartItems")) return;
+    cartItemsArr = JSON.parse(localStorage.getItem("cartItems"));
+    cartItemsArr.forEach((item) => {
+      addToCart(data, item.index);
+      const quantityCounter = document.querySelector(
+        `.quantity-counter[data-index='${item.index}']`
+      );
+      quantityCounter.setAttribute("data-count", "0");
+      for (let counter = item.counter; counter > 0; counter--) {
+        increaseQuantityItem(data, item.index);
+      }
+    });
+    trackingCart();
+  };
+  //
+  const fillLovedItems = function () {
+    if (!localStorage.getItem("lovedItems")) return;
+    lovedItems = JSON.parse(localStorage.getItem("lovedItems"));
+    lovedItems.forEach((LovedItemIndex) => {
+      const item = document.querySelector(
+        `.loved-container[data-index="${LovedItemIndex}"]`
+      );
+      const icon = item.querySelector("svg");
+      icon.style.fill = "red";
+    });
+  };
+  fillCart();
+  fillLovedItems();
 }

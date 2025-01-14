@@ -29,6 +29,29 @@ button {
 a {
   text-decoration: none;
 }
+ul {
+  list-style: none;
+}
+
+.input-field {
+  padding: 10px;
+  border: none;
+  outline: 1px solid #c83b0e;
+  width: 50%;
+  height: 40px;
+}
+select {
+  border-right: 20px solid transparent !important;
+}
+/* Website Title Styles ////////////////////////////////////// */
+.attribution {
+  font-size: 11px;
+  text-align: center;
+  padding: 15px 0;
+}
+.attribution a {
+  color: hsl(228, 45%, 44%);
+}
 
 /* Store Page Styles ///////////////////////////////////////// */
 .store {
@@ -111,6 +134,13 @@ a {
     background-color: #b53206;
   }
 }
+
+/* Filtering products style */
+.filtering-container {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 20px;
+}
 /* Products Page Styles ////////////////////////////////////// */
 .products {
   flex: 2;
@@ -119,6 +149,23 @@ a {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 40px;
+}
+.card {
+  position: relative;
+}
+.loved-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  height: 24px;
+  width: 24px;
+  cursor: pointer;
+  &:hover svg {
+    fill: red;
+  }
 }
 
 .card-image .card-product-image {
@@ -238,11 +285,10 @@ a {
 .delete-item {
   width: 18px;
   height: 18px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  text-align: center;
   border: 1px solid grey;
   border-radius: 50%;
+  display: inline-block;
   align-self: center;
   cursor: pointer;
   &:hover {

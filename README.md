@@ -1,6 +1,6 @@
 # Products-with-cart
 
-Frontend Mentor "product list with cart" challenge
+E-commerce shopping cart
 
 ## Table of contents
 
@@ -12,7 +12,7 @@ Frontend Mentor "product list with cart" challenge
 
 ## Overview
 
-This project is an e-commerce shopping cart system that allows users to browse a catalog of products, add items to their cart, adjust quantities, and view an order confirmation with a receipt.
+This project is an e-commerce shopping cart system that allows users to browse a catalog of products, add items to their cart, add items to favorites adjust quantities, and view an order confirmation with a receipt once they checkout.
 
 ### The challenge
 
@@ -20,14 +20,20 @@ Users should be able to:
 
 - Add items to the cart and remove them
 - Increase/decrease the number of items in the cart
-- See an order confirmation modal when they click "Confirm Order"
+- Add items to favorites
+- View the cart and favorites items
+- Register/Sign in
+- See an order confirmation modal when they click "Confirm Order" or checkout
 - Reset their selections when they click "Start New Order"
 - View the optimal layout for the interface depending on their device's screen size
 - See hover and focus states for all interactive elements on the page
 
 ### Screenshot
 
-![preview](./preview.jpg)
+![home-preview](./preview/homePreview.png)
+![cart-preview](./preview/cart.png)
+![register-preview](./preview/register.png)
+![sign-preview](./preview/sign.png)
 
 ### Links
 
