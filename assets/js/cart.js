@@ -170,6 +170,9 @@ tableBody.addEventListener("input", function (e) {
     (item) => item.index === itemUniqueIndex
   );
   const totalItem = e.target.closest("tr").querySelector(".item-total");
+  if (e.target.value <= 0) {
+    e.target.value = 1;
+  }
   cartItemsArr[arrIndex].counter = e.target.value;
 
   totalItem.textContent = `$${(
